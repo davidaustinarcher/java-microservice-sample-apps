@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,10 +19,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 public final class BookstoreDataService {
@@ -56,7 +61,7 @@ public final class BookstoreDataService {
     }
   }
 
-  /** Invokes the bookstore-profanity-checker service to check if the title is safe. */
+  /* Invokes the bookstore-profanity-checker service to check if the title is safe. */
   private boolean hasProfanity(final String title) throws IOException {
     final CloseableHttpClient client = HttpClientBuilder.create().build();
     final HttpUriRequest request = RequestBuilder.get("http://bookstore-profanity-checker:8003/api/profanity/check/title")
@@ -75,13 +80,13 @@ public final class BookstoreDataService {
     return false;
   }
 
-  /** This is the DTM for returning whether profanity is present. */
+  /* This is the DTM for returning whether profanity is present. */
   public static class ProfanityResponseJSON {
     public boolean profane;
     public String piece;
   }
 
-  /**
+  /*
    * This is how our legacy systems update a book when the page count needs to be updated. This one
    * doesn't need a profanity check because these book titles are checked upstream.
    */
@@ -98,5 +103,26 @@ public final class BookstoreDataService {
   private void searchAndReplace(final Book updatedBook) {
     books.removeIf(existingBook -> existingBook.getTitle().equals(updatedBook.getTitle()));
     books.add(updatedBook);
+  }
+
+  @RequestMapping(path="/dump")
+  public ResponseEntity<byte[]> dumpBook(@RequestParam String title) {
+    byte[] body = new byte[] {};
+    for (Book b : books) {
+      if (title.equals(b.getTitle())) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try {
+          ObjectOutputStream oos = new ObjectOutputStream(bytes);
+          oos.writeObject(b);
+          oos.close();
+          body = bytes.toByteArray();
+        } catch (IOException e) {
+        }
+        break;
+      }
+    }
+   return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .body(body);
   }
 }
