@@ -10,6 +10,7 @@ import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -65,8 +66,34 @@ public final class BookService {
    * Call the bookstore-data-manager service to get the books.
    */
   @Path("/list")
+  @Produces({"application/xml", "application/xhtml+xml"})
   @GET
   public BookList list() throws IOException {
+    return getBooksFromDataManager();
+  }
+
+  /**
+   * Call the bookstore-data-manager service to get the books.
+   */
+  @Path("/list")
+  @Produces({"text/html","text/plain"})
+  @GET
+  public String listAsText() throws IOException {
+    BookList books = getBooksFromDataManager();
+    StringBuilder sb = new StringBuilder();
+    for (Book book : books.titles) {
+      sb.append(book.title+" ("+String.valueOf(book.pages)+" pages)\r\n");
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Call the bookstore-data-manager service to get the books.
+   */
+  @Path("/list")
+  @Produces("application/json")
+  @GET
+  public BookList listAsJson() throws IOException {
     return getBooksFromDataManager();
   }
 

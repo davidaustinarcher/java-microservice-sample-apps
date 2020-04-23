@@ -36,10 +36,11 @@ public final class BookstoreDataService {
     return books;
   }
 
-  @RequestMapping(path = "/add", method = RequestMethod.POST)
-  public void addBook(@RequestBody final Book book) {
+  @RequestMapping(path = "/add", method = RequestMethod.POST, produces="application/json")
+  public String addBook(@RequestBody final Book book) {
     System.out.println("Adding book: " + book.getTitle());
     books.add(book);
+    return "{\"status\": \"success\", \"title\": \"" + book.getTitle() + "\"}";
   }
 
   /**

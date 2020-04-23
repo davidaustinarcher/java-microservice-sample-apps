@@ -30,6 +30,7 @@ public final class HealthService {
     return new HealthSummary(
         Lists.newArrayList(
             performHealthCheck("data-manager", ServicePaths.DATA_MANAGER_URL),
+            performHealthCheck("reviews", ServicePaths.REVIEWS_URL),
             performHealthCheck("devservice", ServicePaths.DEBUG_URL)));
   }
 

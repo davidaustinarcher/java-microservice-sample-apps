@@ -37,5 +37,15 @@ services:
         aliases:
           - SECRET.acmedevinfo.local
 
+  bookstore-reviews:
+    build: ./bookstore-reviews
+    networks:
+      - sample-app
+
+  bookstore-mongodb:
+    image: mongo
+    networks:
+      - sample-app
+
 networks:
   sample-app:
