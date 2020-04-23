@@ -31,3 +31,8 @@ hs_err_pid*
 
 contrast_security-*.yaml
 docker-compose-override.yml
+
+# Temporary VS Code files
+.classpath
+.project
+.settings
