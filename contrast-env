@@ -1,0 +1,9 @@
+PATH=/app:/usr/local/bin
+
+CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore
+CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast
+CONTRAST__AGENT__LOGGER__STDOUT=true
+CONTRAST__SERVER__ENVIRONMENT=development
+
+# The agent will be mapped in from a voume built by agent-grabber
+JAVA_TOOL_OPTIONS=-javaagent:/agents/java/contrast.jar

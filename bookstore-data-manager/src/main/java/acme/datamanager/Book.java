@@ -1,7 +1,9 @@
 package acme.datamanager;
 
-public final class Book {
+import java.io.Serializable;
 
+public final class Book implements Serializable {
+  private static final long serialVersionUID = 1L;
   private String title;
   private int pages;
 

@@ -1,32 +1,57 @@
 version: "3.0"
 services:
+  agent-grabber:
+    build: ./agent-grabber
+    volumes:
+      - "bookstore-agent-volume:/agents"
   bookstore-datamanager:
+    build: ./bookstore-data-manager
+    depends_on:
+      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./contrast.jar:/tmp/contrast.jar"
+      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./contrast-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Data Manager"
-      - "CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast"
-      - "CONTRAST__AGENT__LOGGER__STDOUT=true"
-      - "CONTRAST__SERVER__ENVIRONMENT=development"
-      - "JAVA_TOOL_OPTIONS=-javaagent:/tmp/contrast.jar"
   bookstore-devservice:
+    build: ./bookstore-devservice
+    depends_on:
+      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./contrast.jar:/tmp/contrast.jar"
+      - "./wait-for-agent-then-exec.sh:/app/java"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./contrast-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Devservice"
-      - "CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast"
-      - "CONTRAST__AGENT__LOGGER__STDOUT=true"
-      - "CONTRAST__SERVER__ENVIRONMENT=development"
-      - "JAVA_TOOL_OPTIONS=-javaagent:/tmp/contrast.jar"
   bookstore-frontend:
+    build: ./bookstore-frontend
+    depends_on:
+      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./contrast.jar:/tmp/contrast.jar"
+      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./contrast-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Front End"
-      - "CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast"
-      - "CONTRAST__AGENT__LOGGER__STDOUT=true"
-      - "CONTRAST__SERVER__ENVIRONMENT=development"
-      - "JAVA_TOOL_OPTIONS=-Djavax.xml.accessExternalDTD=all -javaagent:/tmp/contrast.jar"
+      - "JAVA_TOOL_OPTIONS=-Djavax.xml.accessExternalDTD=all -javaagent:/agents/java/contrast.jar"
+  bookstore-profanity-checker:
+    build: ./bookstore-profanity-checker
+    depends_on:
+      - agent-grabber
+    volumes:
+      - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
+      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./contrast-env
+    environment:
+      - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Profanity Checker"
+volumes:
+  bookstore-agent-volume:
