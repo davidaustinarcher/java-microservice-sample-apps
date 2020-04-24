@@ -34,35 +34,34 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 @Path("/")
-public final class ReviewService {
+public final class FavoritesService {
 
   private final Gson gson = new GsonBuilder().create();
 
   /**
-   * TODO: update comment
-   * Take a request to review a book, send it to the backend microservice asynchronously. This
-   * endpoint expects the book in XML form. Validate it's a valid book before forwarding on.
+   * Take a request to favorite a book, send it to the backend microservice asynchronously. This
+   * endpoint expects the favorite in JSON form.
    */
-  @Path("/reviews/add")
+  @Path("/favorites/add")
   @POST
-  public Response addReview(final InputStream body) throws JAXBException, IOException {
-    final JAXBContext jaxb = JAXBContext.newInstance(Review.class);
+  public Response addFavorite(final InputStream body) throws JAXBException, IOException {
+    final JAXBContext jaxb = JAXBContext.newInstance(Favorite.class);
     final Unmarshaller unmarshaller = jaxb.createUnmarshaller();
-    final Review review = (Review) unmarshaller.unmarshal(body);
-    System.out.println("Forwarding new review for " + review.title + " to reviews");
-    sendToReviews(review);
+    final Favorite favorite = (Favorite) unmarshaller.unmarshal(body);
+    System.out.println("Forwarding new favorite for " + favorite.user + " to favorites");
+    sendToFavorites(favorite);
     return Response.ok().build();
   }
 
   /**
-   * Send the review to the microservice that actually stores it.
+   * Send the favorite to the microservice that actually stores it.
    */
-  private void sendToReviews(final Review review) throws IOException {
-    String reviewJson = gson.toJson(review);
+  private void sendToFavorites(final Favorite favorite) throws IOException {
+    String favoriteJson = gson.toJson(favorite);
     final CloseableHttpClient client = HttpClientBuilder.create().build();
-    final HttpUriRequest request = RequestBuilder.post(ServicePaths.REVIEWS_URL + "reviews")
+    final HttpUriRequest request = RequestBuilder.post(ServicePaths.FAVORITES_URL + "favorites")
         .setHeader("Content-Type", "application/json")
-        .setEntity(new StringEntity(reviewJson)).build();
+        .setEntity(new StringEntity(favoriteJson)).build();
     final CloseableHttpResponse response = client.execute(request);
     final HttpEntity entity = response.getEntity();
     if (entity != null) {
@@ -71,50 +70,50 @@ public final class ReviewService {
   }
 
   /**
-   * Call the bookstore-reviews service to get the reviews.
+   * Call the bookstore-favorites service to get the favorites.
    */
-  @Path("/reviews")
+  @Path("/favorites")
   @GET
-  public ReviewList reviews(@Context UriInfo uriInfo) throws IOException {
-    // Pass our query params on to the reviews service
+  public FavoriteList favorites(@Context UriInfo uriInfo) throws IOException {
+    // Pass our query params on to the favorites service
     MultivaluedMap<String,String> params = uriInfo.getQueryParameters();
     List<NameValuePair> nvps = new ArrayList<>(params.size());
     for (Map.Entry<String,List<String>> entry : params.entrySet()) {
       nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue().get(0)));
     }
-    return getReviewsFromReviews(nvps.toArray(new NameValuePair[0]));
+    return getFavoritesFromFavorites(nvps.toArray(new NameValuePair[0]));
   }
 
-  private ReviewList getReviewsFromReviews(final NameValuePair[] params) throws IOException {
+  private FavoriteList getFavoritesFromFavorites(final NameValuePair[] params) throws IOException {
     final CloseableHttpClient client = HttpClientBuilder.create().build();
-    final HttpUriRequest request = RequestBuilder.get(ServicePaths.REVIEWS_URL + "reviews")
+    final HttpUriRequest request = RequestBuilder.get(ServicePaths.FAVORITES_URL + "favorites")
         .addParameters(params)
         .build();
     final CloseableHttpResponse response = client.execute(request);
     final HttpEntity entity = response.getEntity();
-    final ReviewList reviewlist = new ReviewList();
+    final FavoriteList favoritelist = new FavoriteList();
     if (entity != null) {
       final String responseBody = EntityUtils.toString(entity);
-      final Type listType = new TypeToken<List<Review>>() {
+      final Type listType = new TypeToken<List<Favorite>>() {
       }.getType();
-      reviewlist.reviews = gson.fromJson(responseBody, listType);
+      favoritelist.favorites = gson.fromJson(responseBody, listType);
       System.out
-          .println("Fetched " + reviewlist.reviews.size() + " from bookstore-reviews service");
+          .println("Fetched " + favoritelist.favorites.size() + " from bookstore-favorites service");
     } else {
-      System.err.println("Couldn't get book info from bookstore-reviews service");
+      System.err.println("Couldn't get book info from bookstore-favorites service");
     }
-    return reviewlist;
+    return favoritelist;
   }
 
-  @XmlRootElement(name = "reviews")
-  private static class ReviewList {
+  @XmlRootElement(name = "favorites")
+  private static class FavoriteList {
 
-    @XmlElement(name = "review")
-    private List<Review> reviews;
+    @XmlElement(name = "favorite")
+    private List<Favorite> favorites;
   }
 
-  @XmlRootElement(name = "review")
-  private static class Review {
+  @XmlRootElement(name = "favorite")
+  private static class Favorite {
 
     @XmlElement(name = "title")
     private String title;
@@ -122,19 +121,15 @@ public final class ReviewService {
     @XmlElement(name = "user")
     private String user;
 
-    @XmlElement(name = "score")
-    private Float score;
-
-    @XmlElement(name = "comments")
-    private String comments;
+    @XmlElement(name = "id")
+    private String id;
 
     @Override
     public String toString() {
-      return "Review{" +
+      return "Favorite{" +
           "title='" + title + '\'' +
           ", user=" + user + '\'' +
-          ", score=" + score +
-          ", comments=" + comments + '\'' +
+          ", id=" + id + '\'' +
           '}';
     }
   }

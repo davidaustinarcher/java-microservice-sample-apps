@@ -31,6 +31,7 @@ public final class HealthService {
         Lists.newArrayList(
             performHealthCheck("data-manager", ServicePaths.DATA_MANAGER_URL),
             performHealthCheck("reviews", ServicePaths.REVIEWS_URL),
+            performHealthCheck("favorites", ServicePaths.FAVORITES_URL),
             performHealthCheck("profanity-checker", ServicePaths.PROFANITY_CHECKER_URL),
             performHealthCheck("devservice", ServicePaths.DEBUG_URL)));
   }

@@ -1,0 +1,22 @@
+GET http://localhost:3000/favorites
+
+###
+
+GET http://localhost:3000/favorites?user=Name
+
+###
+
+Get http://localhost:3000/favorites/5d3e0db7cb4be0bfc4c25ff9
+
+###
+
+POST http://localhost:3000/favorites
+Content-Type: application/json
+
+{
+  "user": "Lizzy",
+  "title": "Everybody's Favorite Book"
+}
+
+###
+DELETE http://localhost:3000/favorites/5d3e0db7cb4be0bfc4c25ff9

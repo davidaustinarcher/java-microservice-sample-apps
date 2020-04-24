@@ -10,10 +10,12 @@ services:
       - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./contrast-env
+      - ./env-contrast-java
+      - ./env-wait-for-then-exec
+
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Data Manager"
   bookstore-devservice:
@@ -22,10 +24,11 @@ services:
       - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./wait-for-agent-then-exec.sh:/app/java"
+      - "./wait-for-then-exec.sh:/app/java"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./contrast-env
+      - ./env-contrast-java
+      - ./env-wait-for-then-exec
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Devservice"
   bookstore-frontend:
@@ -34,10 +37,11 @@ services:
       - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./contrast-env
+      - ./env-contrast-java
+      - ./env-wait-for-then-exec
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Front End"
       - "JAVA_TOOL_OPTIONS=-Djavax.xml.accessExternalDTD=all -javaagent:/agents/java/contrast.jar"
@@ -47,10 +51,11 @@ services:
       - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
-      - "./wait-for-agent-then-exec.sh:/app/mvn"
+      - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./contrast-env
+      - ./env-contrast-java
+      - ./env-wait-for-then-exec
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Profanity Checker"
 volumes:

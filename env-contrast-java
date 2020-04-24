@@ -1,4 +1,4 @@
-PATH=/app:/usr/local/bin
+WAIT_FOR=contrast-agent:java
 
 CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore
 CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast

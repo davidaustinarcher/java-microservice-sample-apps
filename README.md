@@ -5,51 +5,74 @@ There are 3 microservice apps that implement a "book store".
 
 ## The Microservices
 
-### bookstore-frontend
+### bookstore-frontend (port 8000)
 
 The bookstore-frontend app is a jax-rs app serving as a front end for the book store, exposing these
 endpoints for book management:
  - GET /health
  - POST /add (this endpoint has an XXE vulnerability)
- - POST /delete
  - GET /list
  - GET /debug
+ - POST /favorites/add
+ - GET /favorites
+ - POST /reviews/add
+ - GET /reviews
 
-### bookstore-data-manager
+### bookstore-data-manager (port 8001)
 
 The bookstore-data-manager app is a SpringBoot app which holds the book data, offering a few services:
  - GET /ping
  - POST /add
+ - GET /dump?title=_title_
  - POST /update (this "internal only" endpoint has a deserialization vulnerability)
- - POST /delete
  - GET /list
  
-### bookstore-debug
+### bookstore-devservice (port 8002)
 
 The bookstore-debug app is a Dropwizard app that offers info to the devs:
  - GET /application/ping
  - GET /application/info?env=qa (this endpoint has an SSRF vulnerability)
 
-### bookstore-profanity-checker
+### bookstore-profanity-checker (port 8003)
 
 The bookstore-profanity-checker app is a RESTEasy (https://resteasy.github.io/) app that offers a profanity check to new book titles:
  - GET /api/ping
  - GET /api/profanity/check/title?title=Title+Here
  - POST /api/profanity/check/book
 
+### bookstore-favorites
+
+The bookstore-favorites app is a Node Express app that offers storage of user favorites via a MongoDB database:
+ - GET /ping
+ - GET /favorites?*query_terms*
+ - POST /favorites
+ - GET /favorites/_id_
+ - DELETE /favorites/_id_
+
+### bookstore-reviews
+
+THe bookstore-reviews app is a Python Fask app that offers user reviews of the books via a MongoDB database:
+ - GET /ping
+ - GET /reviews?*query_terms*
+ - POST /reviews
+
 ## Usage
 
-The first step is to start all 3 of the services, which will run on ports 8000, 8001 and 8002, respectively.
+The first step is to start the services.
 
 To start normally:
 ```
 $ docker-compose up
 ```
 
-To start with Contrast enabled, first edit contrast_security.yaml with your agent credentials, then:
+To start with Contrast enabled, first edit `contrast_security.yaml` with your agent credentials, then:
 ```
-$ cp /path/to/contrast.jar .
 $ docker-compose -f docker-compose.yml -f docker-compose-contrast.yml up
+```
+
+The latest Contrast agent will be pulled down via the agent-grabber container, when it is built.  If you want to grab a new version of the agent, you may need to:
+```
+$ docker-compose down && docker-compose build
 ```
 
 If you don't want to use docker-compose, each service has a Dockerfile to make running 1 step. Consult each service's `README.md` to see the commands.
@@ -75,7 +98,7 @@ $ curl -H "Content-Type: application/xml" http://localhost:8000/add -d '<book><t
 
 Alternatively, you can add a book through the backend service directly, where it expects JSON:
 ```
-$ curl -H "Content-Type: application/json" http://localhost:8001/add -d '{"pages":"30", "title":"The Giving Tree"}'
+$ curl -X POST -H "Content-Type: application/json" http://localhost:8001/add -d '{"pages":"30", "title":"The Giving Tree"}'
 ```
 
 Get debug info on the service:
@@ -83,9 +106,35 @@ Get debug info on the service:
 $ curl http://localhost:8000/debug
 ```
 
-You can also check a title value for profanity (the word "darn" is profane according to this PG-rated filter). This is done automatically through the "add a new book" endpoint:
+You can also check a title value for profanity (the "profane" word list for this PG-rated filter is available in `ProfanityRestservice.java`). This is done automatically through the "add a new book" endpoint:
 ```
 $ curl http://localhost:8003/api/profanity/check/title?title=This+Darn+Title
+```
+
+You can dump a serialized Java object for a title via an internal-only endpoint:
+```
+curl -o _serialized-java-object-file_ 'http://localhost:8001/dump?title=Dune'
+```
+
+You can update an existing title via an internal-only endpoint:
+```
+$ curl -H 'Content-type: application/octet-stream' --data-binary @_serialized-java-object-file_ http;//localhost:8001/update
+```
+
+(Normally the update endpoint would be given a modified version of the java object)
+
+The reviews and favorites are accessible from the frontend.  You can view them:
+```
+$ curl http://localhost:8000/favorites
+$ curl http://localhost:8000/reviews
+$ curl 'http://localhost:8000/favorites?user=Bob'
+$ curl 'http://localhost:8000/reviews?user=Bob'
+```
+
+and add new ones:
+```
+$ curl -X POST -H "Content-Type: application/xml" http://localhost:8000/favorites/add -d '<favorite><title>Billychuck</title><user>Jon</user></favorite>'
+$ curl -X POST -H "Content-Type: application/xml" http://localhost:8000/reviews/add -d '<review><user>Jon</user><title>Billychuck</title><score>5.0</score><comments>My new favorite!</comments></review>'
 ```
 
 ## Detecting the vulnerabilities

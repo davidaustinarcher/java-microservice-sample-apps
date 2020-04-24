@@ -17,3 +17,13 @@ rm -f Dune.ser
 curl -o Dune.ser 'http://localhost:8001/dump?title=Dune'
 curl -X POST -H 'Content-type: application/octet-stream' --data-binary @Dune.ser http://localhost:8001/update
 rm Dune.ser
+
+
+curl -X POST -H "Content-Type: application/xml" http://localhost:8000/favorites/add -d '<favorite><title>Billychuck</title><user>Jon</user></favorite>'
+curl -X POST -H "Content-Type: application/xml" http://localhost:8000/reviews/add -d '<review><user>Jon</user><title>Billychuck</title><score>5.0</score><comments>My new favorite!</comments></review>'
+
+curl http://localhost:8000/favorites
+curl http://localhost:8000/reviews
+curl 'http://localhost:8000/favorites?user=Jon'
+curl 'http://localhost:8000/reviews?user=Jon'
+
