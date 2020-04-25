@@ -1,8 +1,20 @@
 version: "3.0"
 services:
   agent-grabber:
-    build: ./agent-grabber
+    build:
+      context: ./agent-grabber
+      dockerfile: ./Dockerfile
+      args:
+        - URL=${URL}
+        - API_KEY=${API_KEY}
+        - ORG_ID=${ORG_ID}
+        - SERVICE_KEY=${SERVICE_KEY}
+        - AUTH_HDR=${AUTH_HDR}
+
+    env_file:
+      - ./env-contrast-user
     volumes:
+      - "./contrast_security-user.yaml:/app/contrast_security-user.yaml"
       - "bookstore-agent-volume:/agents"
   bookstore-datamanager:
     build: ./bookstore-data-manager
@@ -58,5 +70,28 @@ services:
       - ./env-wait-for-then-exec
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Profanity Checker"
+  bookstore-favorites:
+    depends_on:
+      - agent-grabber
+    volumes:
+      - "./contrast_security.yaml:/app/contrast_security.yaml"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./env-contrast-node
+    environment:
+      - "WAIT_FOR=bookstore-mongodb:27017 contrast-agent:node"
+      - "CONTRAST__APPLICATION__NAME=Bookstore Favorites"
+  bookstore-reviews:
+    depends_on:
+      - agent-grabber
+    volumes:
+      - "./contrast_security.yaml:/app/contrast_security.yaml"
+      - "bookstore-agent-volume:/agents"
+    env_file:
+      - ./env-contrast-python
+    environment:
+      - "WAIT_FOR=bookstore-mongodb:27017 contrast-agent:python"
+      - "CONTRAST__APPLICATION__NAME=Bookstore Reviews"
+      
 volumes:
   bookstore-agent-volume:

@@ -1,0 +1,7 @@
+WAIT_FOR=contrast-agent:python
+
+CONTRAST__AGENT__CONTRAST_WORKING_DIR=/tmp/contrast
+CONTRAST__AGENT__LOGGER__STDOUT=true
+CONTRAST__SERVER__ENVIRONMENT=development
+
+CONTRAST_CONFIG_PATH=/app/contrast_security.yaml

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+args=( "$@" )
+
 timeout=1
 
 export PATH=""
@@ -77,6 +79,59 @@ EOF
     }
 fi
 
+create_contrast_flask() {
+    dest="$1"
+    cat <<EOF > "$dest"
+import sys
+import os.path
+
+this = sys.modules[__name__]
+
+print('Loading Contrast Flask shim')
+
+orig_path = list(sys.path)
+
+# Pop off ourself
+while sys.path[0] == os.path.dirname("$dest"):
+    sys.path.pop(0)
+
+while sys.path[0] == '':
+    sys.path.pop(0)
+
+if 'flask' in sys.modules:
+    del sys.modules['flask']
+
+from flask import *
+from flask import Flask as _original_Flask
+
+if 'flask' in sys.modules:
+    del sys.modules['flask']
+
+print('Real flask module ', sys.modules[_original_Flask.__module__].__file__)
+
+sys.path = orig_path
+
+sys.modules[__name__] = this
+
+from contrast.agent.middlewares.flask_middleware import FlaskMiddleware as ContrastMiddleware
+
+print('Reverted path to', sys.path)
+
+#class Flask(_original_Flask):
+#    def __init__(self, *args, **kw):
+#        print('Instantiating Contrast-enabled Flask object')
+#        ret = super(Flask,self).__init__(*args, **kw)
+#        ret.wsgi_app = ContrastMiddleware(ret)
+def Flask(*args, **kw):
+    print('Instantiating Contrast-enabled Flask object')
+    ret = _original_Flask(*args, **kw)
+    ret.wsgi_app = ContrastMiddleware(ret)
+    return ret
+
+#print('Flask: ', sys.modules[Flask.__module__].__file__)
+EOF
+}
+
 #####################################################
 
 echo "WAIT_FOR = $WAIT_FOR"
@@ -85,8 +140,12 @@ for target in $WAIT_FOR; do
     echo Waiting for \"$target\"
     case $target in
     contrast-agent*)
-        echo $target | while IFS=":" read dummy language; do
-            if [ "$language" == "java" ]; then
+        language=`echo $target | awk 'BEGIN { FS=":" } {print $2}'`
+        if [ ! -b /dev/console ]; then
+            ln -s /proc/1/fd/1 /dev/console
+        fi
+            case $language in
+            java)
                 if [[ "$JAVA_TOOL_OPTIONS" == *"contrast"* ]]; then
                     agent=`echo $JAVA_TOOL_OPTIONS | sed 's/.*-javaagent://' | awk '{print $1}'`
                     until [ -f "$agent" ]; do
@@ -94,11 +153,44 @@ for target in $WAIT_FOR; do
                         sleep .5
                     done
                 fi
-            else
+                ;;
+            node)
+                agent=/agents/node/node-contrast.tgz
+                until [ -f "$agent" ]; do
+                    echo Waiting for $agent
+                    sleep .5
+                done
+                npm install $agent --no-save
+                if [ `basename $0` == "node" ]; then
+                    script=${args[0]}
+                    #args=( "./node_modules/node_contrast" "$script" --agent.logger.path /app/contrast.log --agent.logger.level DEBUG --agent.service.logger.path /app/contrast-service.log --agent.service.logger.level DEBUG "${args[@]:1}" )
+                    args=( "./node_modules/node_contrast" "$script" "${args[@]:1}" )
+                    echo ARGS updated to "${args[@]}"
+                else
+                    echo UNSUPPORTED NODE RUNNER `basename $0` "${args[@]}"
+                    exit 1
+                fi
+                ;;
+            python)
+                agent=/agents/python/contrast-python-agent.tar.gz
+                until [ -f "$agent" ]; do
+                    echo Waiting for $agent
+                    sleep .5
+                done
+                pip install $agent
+                if grep -q Flask "${args[0]}"; then
+                    export PYTHONPATH="/app $PYTHONPATH"
+                    create_contrast_flask /app/flask.py
+                else
+                    echo UNSUPPORTED PYTHON FRAMEWORK "${args[@]}"
+                    exit 1
+                fi
+                ;;
+            *)
                 echo "UNSUPPORTED LANGUAGE $language; ABORTING"
                 exit 1
-            fi
-        done
+                ;;
+            esac
         ;;
     *)
         echo $target | while IFS=":" read host port; do
@@ -113,6 +205,6 @@ done
 
 if [ $? -eq 0 ]; then
     echo PATH=$PATH
-    echo exec `basename $0` $*
-    exec `basename $0` $*
+    echo exec `basename $0` "${args[@]}"
+    exec `basename $0` "${args[@]}"
 fi
