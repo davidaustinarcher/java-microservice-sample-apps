@@ -1,0 +1,8 @@
+# Be sure to use your personal credentials from <Your name> -> Your Account -> Profile in Team Server
+# DO NOT use the agent credentials from <Your name> -> Organization Settings -> API
+
+API_KEY=
+ORG_ID=
+URL=
+SERVICE_KEY=
+AUTH_HDR=

@@ -33,7 +33,7 @@ contrast_security-*.yaml
 docker-compose-override.yml
 
 # Contains user keys to Team Server
-env-contrast-user
+env-contrast-user-*
 
 # Temporary VS Code files
 .classpath
