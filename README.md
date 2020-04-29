@@ -58,23 +58,23 @@ THe bookstore-reviews app is a Python Fask app that offers user reviews of the b
 
 ## Usage
 
-The first step is to edit `env-contrast-user` with your user credentials from
-Team Server.  Note that these are not the same as your agent credentials which
-are used when running the apps.  More details are in the files to edit.  Then
-build the services (uses Bash syntax).  docker-compose will normally build the
-images as needed, but in this case you need to provide environment variables
-for the agent-grabber container, which downloads the latest agents from your
-Team Server account.
-```
-$ env $(grep -v \# env-contrast-user|xargs) docker-compose -f docker-compose.yml -f docker-compose-contrast.yml build
-```
-
-To start normally:
+To start normally (without Contrast):
 ```
 $ docker-compose up
 ```
 
-To start with Contrast enabled, first edit `contrast_security.yaml` with your agent credentials, then:
+To start with Contrast enabled, the first step is to edit `env-contrast-user`
+with your user credentials from Team Server.  Note that these are not the same
+as your agent credentials which are used when running the apps.  More details
+are in the files to edit.  Then build the services (uses Bash syntax).
+docker-compose will normally build the images as needed, but in this case you
+need to provide environment variables for the agent-grabber container, which
+downloads the latest agents from your Team Server account.
+```
+$ env $(grep -v \# env-contrast-user|xargs) docker-compose -f docker-compose.yml -f docker-compose-contrast.yml build
+```
+
+Next, edit `contrast_security.yaml` to add your agent credentials, then:
 ```
 $ docker-compose -f docker-compose.yml -f docker-compose-contrast.yml up
 ```

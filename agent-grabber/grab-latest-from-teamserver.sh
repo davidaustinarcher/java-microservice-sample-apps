@@ -1,27 +1,28 @@
 #!/bin/sh -x
 
+# Usage: grab-latest-from-teamserver.sh <language> <destination_path>
+
 language="$1"
 dest="$2"
 
-#CF="contrast_security-user.yaml"
-#
-#get() {
-#    grep $field $CF | sed "s/^.*$field://"
-#}
+# Requires the following variables to be set in the environment, typically
+# via Docker build arguments: URL, API_KEY, ORG_ID, AUTH_HDR
 
-#URL=`get url`
-#API_KEY=`get api_key`
-#ORG_ID=`get org_id`
-#SERVICE_KEY=`get service_key`
-#AUTH_HDR=`get auth_hdr`
+if [ -z "$URL" -o -z "$API_KEY" -o -z "$ORG_ID" -o -z "$AUTH_HDR" ]; then
+    echo "Environment must include URL, API_KEY, ORG_ID, and AUTH_HDR!  Aborting"
+    echo "Values, respectively: $URL, $API_KEY, $ORG_ID, and $AUTH_HDR"
+    exit 1
+fi
 
-echo URL $URL
+#echo URL $URL
 echo API_KEY $API_KEY
 echo ORG_ID $ORG_ID
-echo SERVICE_KEY $SERVICE_KEY
 echo AUTH_HDR $AUTH_HDR
 
+# Strip trailing slashes on URL
 URL=`echo $URL | sed 's|/*$||'`
+
+# Convert language to uppercase
 language=`echo $language | tr '[:lower:]' '[:upper:]'`
 
 echo URL $URL

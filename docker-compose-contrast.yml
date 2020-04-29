@@ -1,3 +1,6 @@
+# Note: this file should always be used in conjunction with docker-compose.yml
+# For example:
+#   docker-compose -f docker-compose.yml -f docker-compose-contrast.yml up
 version: "3.0"
 services:
   agent-grabber:
@@ -8,87 +11,66 @@ services:
         - URL=${URL}
         - API_KEY=${API_KEY}
         - ORG_ID=${ORG_ID}
-        - SERVICE_KEY=${SERVICE_KEY}
         - AUTH_HDR=${AUTH_HDR}
-
-    env_file:
-      - ./env-contrast-user
     volumes:
       - "./contrast_security-user.yaml:/app/contrast_security-user.yaml"
       - "bookstore-agent-volume:/agents"
   bookstore-datamanager:
     build: ./bookstore-data-manager
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
       - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-java
-      - ./env-wait-for-then-exec
-
+      - ./env-contrast/java-common-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Data Manager"
   bookstore-devservice:
     build: ./bookstore-devservice
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
       - "./wait-for-then-exec.sh:/app/java"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-java
-      - ./env-wait-for-then-exec
+      - ./env-contrast/java-common-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Devservice"
   bookstore-frontend:
     build: ./bookstore-frontend
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
       - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-java
-      - ./env-wait-for-then-exec
+      - ./env-contrast/java-common-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Front End"
       - "JAVA_TOOL_OPTIONS=-Djavax.xml.accessExternalDTD=all -javaagent:/agents/java/contrast.jar"
   bookstore-profanity-checker:
     build: ./bookstore-profanity-checker
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/etc/contrast/java/contrast_security.yaml"
       - "./wait-for-then-exec.sh:/app/mvn"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-java
-      - ./env-wait-for-then-exec
+      - ./env-contrast/java-common-env
     environment:
       - "CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=Bookstore Profanity Checker"
   bookstore-favorites:
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/app/contrast_security.yaml"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-node
+      - ./env-contrast/node-common-env
     environment:
       - "WAIT_FOR=bookstore-mongodb:27017 contrast-agent:node"
       - "CONTRAST__APPLICATION__NAME=Bookstore Favorites"
   bookstore-reviews:
-    depends_on:
-      - agent-grabber
     volumes:
       - "./contrast_security.yaml:/app/contrast_security.yaml"
       - "bookstore-agent-volume:/agents"
     env_file:
-      - ./env-contrast-python
+      - ./env-contrast/python-common-env
     environment:
       - "WAIT_FOR=bookstore-mongodb:27017 contrast-agent:python"
       - "CONTRAST__APPLICATION__NAME=Bookstore Reviews"

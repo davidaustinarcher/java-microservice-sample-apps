@@ -47,27 +47,21 @@ services:
     build: ./bookstore-reviews
     networks:
       - sample-app
-    depends_on:
-      - bookstore-mongodb
     volumes:
       - "./wait-for-then-exec.sh:/app/python"
-    env_file:
-      - env-wait-for-then-exec
     environment:
       - "WAIT_FOR=bookstore-mongodb:27017"
+      - "PATH=/app:/usr/local/bin"
 
   bookstore-favorites:
     build: ./bookstore-favorites
     networks:
       - sample-app
-    depends_on:
-      - bookstore-mongodb
     volumes:
       - "./wait-for-then-exec.sh:/app/node"
-    env_file:
-      - env-wait-for-then-exec
     environment:
       - "WAIT_FOR=bookstore-mongodb:27017"
+      - "PATH=/app:/usr/local/bin"
 
   bookstore-mongodb:
     image: mongo
