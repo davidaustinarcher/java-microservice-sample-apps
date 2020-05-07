@@ -239,24 +239,35 @@ for target in $WAIT_FOR; do
                 fi
                 ;;
 
-            # For Node, we assume that the Contrast agent tarball has been
-            # mapped to /agents/node/node-contrast.tgz
-            node)
-                agent=${AGENT:-/agents/node/node-contrast.tgz}
+            # For local Node, we assume that the Contrast agent tarball has
+            # been  mapped to /agents/node/node-contrast.tgz
+            node*)
+                if [ $language == "node-local" ]; then
+                    agent=${AGENT:-/agents/node/node-contrast.tgz}
 
-                # Wait for the agent file to become available
-                until [ -f "$agent" ]; do
-                    echo Waiting for $agent
-                    sleep $wait_between_checks
-                done
+                    # Wait for the agent file to become available
+                    until [ -f "$agent" ]; do
+                        echo Waiting for $agent
+                        sleep $wait_between_checks
+                    done
+                    process_node_args() {
+                        script=${args[0]}
+                        args=( "./node_modules/node_contrat" "$script" "${args[@]:1}" )
+                    }
+                else
+                    agent="@contrast/agent"
+                    process_node_args() {
+                        script=${args[0]}
+                        args=( "-r" "$agent" "$script" "--" "${args[@]:1}" )
+                    }
+                fi
 
                 # Then npm install it in the app directory
                 npm install $agent --no-save
 
                 # And inject it into the startup command
                 if [ `basename $0` == "node" ]; then
-                    script=${args[0]}
-                    args=( "./node_modules/node_contrast" "$script" "${args[@]:1}" )
+                    process_node_args
                     echo ARGS updated to "${args[@]}"
                 else
                     echo UNSUPPORTED NODE RUNNER `basename $0` "${args[@]}"
